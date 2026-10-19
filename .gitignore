@@ -12,3 +12,10 @@ Desktop.ini
 # Linux
 *~
 .directory
+
+# Node / Vercel
+node_modules/
+.env
+.env.*
+!.env.example
+.vercel

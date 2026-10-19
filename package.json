@@ -1,0 +1,9 @@
+{
+  "name": "zengentleman",
+  "private": true,
+  "description": "Static bilingual site for zengentleman.me. The contact form is sent by a Vercel Function.",
+  "type": "module",
+  "dependencies": {
+    "nodemailer": "^10.1.7"
+  }
+}
