@@ -230,15 +230,15 @@
             <li><span data-i18n="contact.areaLabel">Περιοχή</span> <span class="contact-value" data-i18n="contact.area">Παγκόσμια, online</span></li>
           </ul>
         </div>
-        <!-- Χωρίς JS η φόρμα στέλνει απευθείας με mailto. Με JS, το script.js φτιάχνει το email (θέμα/κείμενο) στη γλώσσα που είναι ενεργή. -->
+        <!-- Χωρίς JS η φόρμα στέλνει με mailto. Με JS, στέλνει στο /api/contact και, αν αποτύχει, ανοίγει το mailto. -->
         <form class="contact-form" id="contact-form" action="mailto:me@zengentleman.com" method="post" enctype="text/plain">
           <div class="field">
             <label for="name" data-i18n="form.name">Όνομα</label>
-            <input id="name" name="name" type="text" autocomplete="name" required placeholder="Το όνομά σου" data-i18n-attr="placeholder:form.namePh">
+            <input id="name" name="name" type="text" autocomplete="name" required maxlength="100" placeholder="Το όνομά σου" data-i18n-attr="placeholder:form.namePh">
           </div>
           <div class="field">
             <label for="email">Email</label>
-            <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+            <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com">
           </div>
           <div class="field">
             <label for="topic" data-i18n="form.topic">Ενδιαφέρομαι για</label>
@@ -252,9 +252,14 @@
           </div>
           <div class="field">
             <label for="message" data-i18n="form.message">Μήνυμα</label>
-            <textarea id="message" name="message" rows="5" required placeholder="Τι αναζητάς; Πού θα ήθελες να σε βοηθήσω;" data-i18n-attr="placeholder:form.messagePh"></textarea>
+            <textarea id="message" name="message" rows="5" required maxlength="5000" placeholder="Τι αναζητάς; Πού θα ήθελες να σε βοηθήσω;" data-i18n-attr="placeholder:form.messagePh"></textarea>
+          </div>
+          <div class="hp-field" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
           </div>
           <button type="submit" class="btn btn-primary" data-i18n="form.submit">Αποστολή</button>
+          <p class="form-status" id="form-status" role="status" aria-live="polite" hidden></p>
           <p class="form-note" data-i18n="form.note">Η φόρμα ανοίγει το πρόγραμμα email σου.</p>
         </form>
       </div>

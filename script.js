@@ -12,6 +12,10 @@
       // Strings that exist only in JS (not in the HTML)
       'a11y.menuOpen': 'Άνοιγμα μενού',
       'a11y.menuClose': 'Κλείσιμο μενού',
+      'form.sending': 'Στέλνεται…',
+      'form.success': 'Το μήνυμα στάλθηκε. Θα επικοινωνήσω μαζί σου σύντομα.',
+      'form.error': 'Δεν στάλθηκε. Ανοίγει το πρόγραμμα email σου.',
+      'form.noteLive': 'Το μήνυμα στέλνεται από εδώ. Αν δεν τα καταφέρει, ανοίγει το email σου.',
       'mail.subject': 'Νέο μήνυμα από το zengentleman.me',
       'mail.name': 'Όνομα',
       'mail.email': 'Email',
@@ -117,7 +121,11 @@
       'form.message': 'Message',
       'form.messagePh': 'What are you looking for? How can I help?',
       'form.submit': 'Send',
+      'form.sending': 'Sending…',
+      'form.success': 'Your message was sent. I’ll get back to you soon.',
+      'form.error': 'It couldn’t be sent. Your email app is opening.',
       'form.note': 'The form opens your email app.',
+      'form.noteLive': 'Your message is sent from here. If that doesn’t work, your email app opens.',
 
       'footer.quote': '“One step at a time. One line of code at a time.”',
       'footer.name': 'Christos Tsekouras',
@@ -178,6 +186,11 @@
 
     const open = navToggle.getAttribute('aria-expanded') === 'true';
     navToggle.setAttribute('aria-label', t(open ? 'a11y.menuClose' : 'a11y.menuOpen'));
+
+    const submitBtn = document.querySelector('#contact-form button[type="submit"]');
+    if (submitBtn && sending) submitBtn.textContent = t('form.sending');
+    const statusEl = document.getElementById('form-status');
+    if (statusEl && formStatusKey) statusEl.textContent = t(formStatusKey);
   }
 
   function setLang(lang) {
@@ -208,11 +221,31 @@
     if (e.key === 'Escape' && nav.classList.contains('open')) { setMenu(false); navToggle.focus(); }
   });
 
-  // Contact form: compose the email in the active language
+  // Contact form: POST to the Vercel function. Mailto stays the no-JS action and the failure fallback.
   const form = document.getElementById('contact-form');
-  form.addEventListener('submit', e => {
-    if (!form.checkValidity()) return;
-    e.preventDefault();
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const statusEl = document.getElementById('form-status');
+  let sending = false;
+  let formStatusKey = '';
+
+  const note = form.querySelector('.form-note');
+  note.dataset.i18n = 'form.noteLive';
+
+  function setFormStatus(key, kind) {
+    formStatusKey = key || '';
+    if (!formStatusKey) {
+      statusEl.hidden = true;
+      statusEl.textContent = '';
+      statusEl.classList.remove('is-success', 'is-error');
+      return;
+    }
+    statusEl.hidden = false;
+    statusEl.textContent = t(formStatusKey);
+    statusEl.classList.toggle('is-success', kind === 'success');
+    statusEl.classList.toggle('is-error', kind === 'error');
+  }
+
+  function openMailto() {
     const topic = form.topic.options[form.topic.selectedIndex].text;
     const body = [
       `${t('mail.name')}: ${form.name.value.trim()}`,
@@ -224,6 +257,54 @@
     ].join('\n');
     const subject = `${t('mail.subject')} · ${topic}`;
     location.href = 'mailto:me@zengentleman.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    if (!form.checkValidity()) return;
+    e.preventDefault();
+    if (sending) return;
+
+    sending = true;
+    submitBtn.disabled = true;
+    submitBtn.setAttribute('aria-busy', 'true');
+    submitBtn.textContent = t('form.sending');
+    setFormStatus('', '');
+
+    let sent = false;
+    try {
+      const honeypot = form.elements.website;
+      const payload = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        topic: form.topic.value,
+        message: form.message.value.trim(),
+        lang: current,
+        website: honeypot ? honeypot.value : ''
+      };
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      let data = null;
+      try { data = await res.json(); } catch (err) { data = null; }
+      sent = res.ok && data && data.ok === true;
+    } catch (err) {
+      sent = false;
+    } finally {
+      sending = false;
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('aria-busy');
+      submitBtn.textContent = t('form.submit');
+    }
+
+    if (sent) {
+      setFormStatus('form.success', 'success');
+      form.reset();
+    } else {
+      setFormStatus('form.error', 'error');
+      openMailto();
+    }
   });
 
   document.getElementById('year').textContent = new Date().getFullYear();
